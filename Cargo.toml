@@ -1,7 +1,12 @@
 [package]
 name = "snx"
 version = "0.0.1"
+authors = ["Julian Ollivieira"]
 edition = "2021"
+description = "an experimental batteries-included web framework"
+documentation = "https://docs.rs/snx"
+repository = "https://github.com/snx-rs/snx"
+license = "MIT"
 
 [dependencies]
 # http
