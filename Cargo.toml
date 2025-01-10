@@ -1,0 +1,27 @@
+[package]
+name = "snx"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+# http
+http = "1.2.0"
+httparse = "1.9.5"
+
+# error handling and tracing
+anyhow = "1.0.95"
+thiserror = "2.0.10"
+tracing = "0.1.41"
+tracing-subscriber = "0.3.19"
+
+# miscellaneous
+rayon = "1.10.0"
+serde = { version = "1.0.217", features = ["derive"] }
+
+# environment
+dotenvy = { version = "0.15.7", optional = true }
+envy = { version = "0.4.2", optional = true }
+
+[features]
+default = ["env"]
+env = ["dep:dotenvy", "dep:envy"]
