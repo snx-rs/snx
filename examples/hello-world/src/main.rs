@@ -1,18 +1,16 @@
-use snx::{
-    router::{Route, Router},
-    Response,
-};
+use snx::router::Router;
 
 struct App;
 
 impl snx::App for App {
     fn with_routes() -> Router {
         Router::builder()
-            .add_route(Route::get("/", |_| Response::builder().body(()).unwrap()))
+            .get("/", |_| "hello world!")
             .build()
+            .unwrap()
     }
 }
 
 fn main() {
-    snx::boot::<App>().unwrap();
+    snx::boot::<App>();
 }

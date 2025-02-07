@@ -1,19 +1,27 @@
-# roadmap
+# roadmap and milestones
 
-- 0.0.2 ✅
-    - simple synchronous http/1.1 server ✅
-    - router with support for dynamic parameters ✅
-    - very simple route handlers (only status + headers, no body) ✅
-    - simple request logging ✅
+## 0.0.3 | core functionality and validating the idea
 
-- 0.0.3 ❌
-    - router with support for optional parameters, wildcards and regex parameters ❌
-    - axum-like extractors for handlers ❌
-    - ergonomic responses (with a body and content-types) and error handling for handlers ❌
-    - application wide good error handling (tracing?) ❌
-    - custom .env configuration (type-checked) ❌
+- [x] basic non-async http/1.1 server
+- [x] flexible router (with dynamic route segments, wildcards, methods, prefixes and middleware groups)
+- [x] ergonomic route handlers
+- [x] ergonomic responses with status codes, headers and bodies (with composition)
+- [x] panic handling and application tracing
+- [x] config toml file
+- [x] middleware
+- [x] built-in middleware for request/response tracing
 
-- 0.0.4 ❌
-    - router middleware, route groups (prefix, middleware) ❌
-    - route names + compile time validation using macros (e.g. route!('posts.view', 5)) ❌
-    - diesel integration ❌
+## 0.0.4 | improved http handling and (subdomain) routing
+
+- [ ] chunked requests
+- [ ] streamed responses
+- [ ] lazy body reading using request object
+- [ ] (sub)domain routing
+
+## 0.0.5 | json io and database (milestone: very basic working REST JSON API)
+
+- [ ] shared context for all handlers/middleware
+- [ ] diesel integration
+- [ ] ergonomic json response body writing
+- [ ] ergonomic json request body reading
+- [ ] error response types
