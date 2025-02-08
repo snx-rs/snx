@@ -27,13 +27,21 @@ impl IntoResponse for StatusCode {
 
 impl IntoResponse for &str {
     fn into_response(self) -> Response {
-        Response::new(self.as_bytes().to_vec())
+        let mut res = Response::new(self.as_bytes().to_vec());
+
+        *res.headers_mut() = vec![("Content-Type", "text/plain; charset=utf-8").into()];
+
+        res
     }
 }
 
 impl IntoResponse for String {
     fn into_response(self) -> Response {
-        Response::new(self.into_bytes())
+        let mut res = Response::new(self.into_bytes());
+
+        *res.headers_mut() = vec![("Content-Type", "text/plain; charset=utf-8").into()];
+
+        res
     }
 }
 

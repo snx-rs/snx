@@ -13,8 +13,11 @@
 
 ## 0.0.4 | improved http handling and (subdomain) routing
 
-- [ ] chunked requests
-- [ ] streamed responses
+- [x] ergonomic headers
+- [x] content-type and encoding header for string responses
+- [x] date header
+- [ ] add support for chunked transfer encoding
+- [ ] streaming responses
 - [ ] lazy body reading using request object
 - [ ] (sub)domain routing
 
@@ -22,6 +25,7 @@
 
 - [ ] shared context for all handlers/middleware
 - [ ] diesel integration
-- [ ] ergonomic json response body writing
+- [ ] ergonomic json response body writing (content type)
 - [ ] ergonomic json request body reading
+- [ ] respond with 415 when incoming data is not expected format
 - [ ] error response types

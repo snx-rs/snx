@@ -204,8 +204,7 @@ impl Builder {
     /// let builder = request::Builder::new().header("Accept-Encoding", "gzip, deflate, br");
     /// ```
     pub fn header(mut self, key: &str, value: &str) -> Self {
-        self.headers
-            .push(Header(key.to_string(), value.to_string()));
+        self.headers.push((key, value).into());
 
         self
     }

@@ -75,12 +75,7 @@ impl Response {
     /// use snx::{response::Response, Header};
     ///
     /// let mut res = Response::new("hello world!".as_bytes().to_vec());
-    /// *res.headers_mut() = vec![
-    ///     Header(
-    ///         "Content-Type".to_string(),
-    ///         "application/json".to_string()
-    ///     )
-    /// ];
+    /// *res.headers_mut() = vec![("Content-Type", "application/json").into()];
     /// ```
     pub fn headers_mut(&mut self) -> &mut Vec<Header> {
         &mut self.head.headers
@@ -120,8 +115,13 @@ impl Response {
         for Header(key, value) in self.head.headers {
             serialized.extend_from_slice(format!("{}: {}\r\n", key, value).as_bytes());
         }
-        serialized.extend_from_slice(b"\r\n");
 
+        let date = chrono::Utc::now()
+            .format("Date: %a, %d %b %Y %H:%M:%S GMT\r\n")
+            .to_string();
+        serialized.extend_from_slice(date.as_bytes());
+
+        serialized.extend_from_slice(b"\r\n");
         if let Some(body) = self.body {
             serialized.extend_from_slice(&body);
         }
