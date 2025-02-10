@@ -1,4 +1,4 @@
-use crate::{http::header::Header, response::into_parts::IntoParts, StatusCode};
+use crate::{http::header::HeaderMap, response::into_parts::IntoParts, StatusCode};
 
 use super::{Parts, Response};
 
@@ -29,7 +29,8 @@ impl IntoResponse for &str {
     fn into_response(self) -> Response {
         let mut res = Response::new(self.as_bytes().to_vec());
 
-        *res.headers_mut() = vec![("Content-Type", "text/plain; charset=utf-8").into()];
+        res.headers_mut()
+            .insert("Content-Type", "text/plain; charset=utf-8");
 
         res
     }
@@ -39,13 +40,14 @@ impl IntoResponse for String {
     fn into_response(self) -> Response {
         let mut res = Response::new(self.into_bytes());
 
-        *res.headers_mut() = vec![("Content-Type", "text/plain; charset=utf-8").into()];
+        res.headers_mut()
+            .insert("Content-Type", "text/plain; charset=utf-8");
 
         res
     }
 }
 
-impl IntoResponse for Vec<Header> {
+impl IntoResponse for HeaderMap {
     fn into_response(self) -> Response {
         let mut res = Response::default();
 
@@ -72,6 +74,19 @@ where
         *res.headers_mut() = self.0.headers;
 
         res
+    }
+}
+
+impl<T, E> IntoResponse for Result<T, E>
+where
+    T: IntoResponse,
+    E: IntoResponse,
+{
+    fn into_response(self) -> Response {
+        match self {
+            Ok(t) => t.into_response(),
+            Err(e) => e.into_response(),
+        }
     }
 }
 

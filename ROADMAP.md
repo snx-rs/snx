@@ -11,21 +11,28 @@
 - [x] middleware
 - [x] built-in middleware for request/response tracing
 
-## 0.0.4 | improved http handling and (subdomain) routing
+## 0.0.4 | improved http handling and more routing options
 
-- [x] ergonomic headers
-- [x] content-type and encoding header for string responses
-- [x] date header
-- [ ] add support for chunked transfer encoding
-- [ ] streaming responses
-- [ ] lazy body reading using request object
 - [ ] (sub)domain routing
+- [ ] respond with 405 when incorrect method is used
+- [x] date header
+- [x] body reading (raw and string) and reading/writing content-length
+- [x] ergonomic header reading/writing
+- [ ] html responses
 
-## 0.0.5 | json io and database (milestone: very basic working REST JSON API)
+## 0.0.5 | json io, forms, validation and database
 
-- [ ] shared context for all handlers/middleware
-- [ ] diesel integration
-- [ ] ergonomic json response body writing (content type)
+- [ ] (custom) shared context for all handlers/middleware
+- [ ] ergonomic json response body writing
 - [ ] ergonomic json request body reading
-- [ ] respond with 415 when incoming data is not expected format
-- [ ] error response types
+- [ ] form json request body reading
+- [ ] validation
+- [ ] diesel integration
+
+## uncategorized
+
+- ranges
+- streaming responses
+- request pipelining
+- transfer encoding
+- content encoding

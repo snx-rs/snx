@@ -6,5 +6,5 @@ mod server;
 
 pub use app::{boot, App};
 pub use config::Config;
-pub use http::{header::Header, middleware, request, response, router, Method, StatusCode};
+pub use http::{header::HeaderMap, middleware, request, response, router, Method, StatusCode};
 pub use server::Server;

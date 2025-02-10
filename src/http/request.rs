@@ -1,6 +1,6 @@
 use std::{collections::HashMap, net::SocketAddr, str};
 
-use super::{header::Header, Method};
+use super::{header::HeaderMap, Method};
 
 /// The maxmimum amount of headers that will be parsed.
 const HEADERS_COUNT: usize = 32;
@@ -11,7 +11,7 @@ pub struct Request {
     method: Method,
     path: String,
     body: Vec<u8>,
-    headers: Vec<Header>,
+    headers: HeaderMap,
     peer_addr: Option<SocketAddr>,
     pub params: Option<HashMap<String, String>>,
 }
@@ -57,6 +57,18 @@ impl Request {
         self.path.clone()
     }
 
+    /// Gets the headers for this request.
+    ///
+    /// ```
+    /// use snx::request::Request;
+    ///
+    /// let request = Request::builder().path("/").build();
+    /// let headers = request.headers();
+    /// ```
+    pub fn headers(&self) -> HeaderMap {
+        self.headers.clone()
+    }
+
     /// Gets the peer address for this request.
     ///
     /// ```
@@ -74,6 +86,44 @@ impl Request {
     /// ```
     pub fn peer_addr(&self) -> Option<SocketAddr> {
         self.peer_addr
+    }
+
+    /// Gets a reference to the body as raw bytes.
+    ///
+    /// ```
+    /// use std::net::{SocketAddr, IpAddr, Ipv4Addr};
+    ///
+    /// use snx::request::Request;
+    ///
+    /// let request = Request::builder()
+    ///     .peer_addr(Some(SocketAddr::new(
+    ///        IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+    ///        8080
+    ///      )))
+    ///     .build();
+    /// let bytes = request.bytes();
+    /// ```
+    pub fn bytes(&self) -> &Vec<u8> {
+        &self.body
+    }
+
+    /// Gets the body as a string.
+    ///
+    /// ```
+    /// use std::net::{SocketAddr, IpAddr, Ipv4Addr};
+    ///
+    /// use snx::request::Request;
+    ///
+    /// let request = Request::builder()
+    ///     .peer_addr(Some(SocketAddr::new(
+    ///        IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+    ///        8080
+    ///      )))
+    ///     .build();
+    /// let string = request.string();
+    /// ```
+    pub fn string(&self) -> Result<String, str::Utf8Error> {
+        str::from_utf8(&self.body).map(|s| s.to_string())
     }
 
     /// Tries to parse a request object from a buffer of bytes.
@@ -94,7 +144,7 @@ impl Request {
         let mut request = Request::builder().peer_addr(peer_addr);
 
         match req.parse(buffer) {
-            Ok(httparse::Status::Complete(_)) => {
+            Ok(httparse::Status::Complete(start_of_body)) => {
                 let method_str = req.method.ok_or(ParseRequestError::MissingMethod)?;
                 let path = req.path.ok_or(ParseRequestError::MissingPath)?;
 
@@ -108,8 +158,12 @@ impl Request {
                     request = request.header(&name, &value);
                 }
 
-                // TODO: temporarily read entire body into request.body
-                request = request.body(vec![]);
+                if let Some(length) = request.headers.get("content-length") {
+                    let length = length.parse::<usize>().unwrap();
+                    let range = &buffer[start_of_body..(start_of_body + length)];
+
+                    request = request.body(range.to_vec());
+                }
 
                 Ok(request.build())
             }
@@ -140,7 +194,7 @@ pub struct Builder {
     method: Method,
     path: String,
     body: Vec<u8>,
-    headers: Vec<Header>,
+    headers: HeaderMap,
     peer_addr: Option<SocketAddr>,
     params: Option<HashMap<String, String>>,
 }
@@ -204,7 +258,7 @@ impl Builder {
     /// let builder = request::Builder::new().header("Accept-Encoding", "gzip, deflate, br");
     /// ```
     pub fn header(mut self, key: &str, value: &str) -> Self {
-        self.headers.push((key, value).into());
+        self.headers.insert(key, value);
 
         self
     }
@@ -252,7 +306,7 @@ impl Default for Builder {
             method: Method::Get,
             path: "/".to_string(),
             body: vec![],
-            headers: vec![],
+            headers: HeaderMap::new(),
             params: Default::default(),
             peer_addr: None,
         }

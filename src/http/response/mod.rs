@@ -1,14 +1,16 @@
 mod into_parts;
 mod into_response;
 
-use crate::{http::header::Header, StatusCode};
+use crate::StatusCode;
 
 pub use into_response::IntoResponse;
+
+use super::header::HeaderMap;
 
 #[derive(Debug, Clone, Default)]
 pub struct Parts {
     pub status: StatusCode,
-    pub headers: Vec<Header>,
+    pub headers: HeaderMap,
 }
 
 /// Represents an HTTP response.
@@ -60,24 +62,24 @@ impl Response {
     /// Gets a reference to the HTTP headers.
     ///
     /// ```
-    /// use snx::{response::Response, Header};
+    /// use snx::response::Response;
     ///
     /// let res = Response::new("hello world!".as_bytes().to_vec());
     /// let headers = res.headers();
     /// ```
-    pub fn headers(&self) -> &Vec<Header> {
+    pub fn headers(&self) -> &HeaderMap {
         &self.head.headers
     }
 
     /// Gets a mutable reference to the HTTP headers.
     ///
     /// ```
-    /// use snx::{response::Response, Header};
+    /// use snx::response::Response;
     ///
     /// let mut res = Response::new("hello world!".as_bytes().to_vec());
-    /// *res.headers_mut() = vec![("Content-Type", "application/json").into()];
+    /// *res.headers_mut() = ("Content-Type", "application/json").into();
     /// ```
-    pub fn headers_mut(&mut self) -> &mut Vec<Header> {
+    pub fn headers_mut(&mut self) -> &mut HeaderMap {
         &mut self.head.headers
     }
 
@@ -112,8 +114,14 @@ impl Response {
             .as_bytes(),
         );
 
-        for Header(key, value) in self.head.headers {
-            serialized.extend_from_slice(format!("{}: {}\r\n", key, value).as_bytes());
+        for (key, values) in self.head.headers.iter() {
+            for value in values {
+                serialized.extend_from_slice(format!("{}: {}\r\n", key, value).as_bytes());
+            }
+        }
+
+        if let Some(ref body) = self.body {
+            serialized.extend_from_slice(format!("Content-Length: {}\r\n", body.len()).as_bytes());
         }
 
         let date = chrono::Utc::now()
