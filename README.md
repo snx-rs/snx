@@ -7,6 +7,8 @@ snx is an experimental batteries-included web framework for Rust.
 snx is designed to fill the gap of non-async batteries-included web frameworks
 in the Rust ecosystem.
 
+we try to keep the amount of dependencies used by snx to a minimum.
+
 ## high level features
 
 ###### non-async

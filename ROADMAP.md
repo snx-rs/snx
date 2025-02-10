@@ -18,7 +18,7 @@
 - [x] date header
 - [x] body reading (raw and string) and reading/writing content-length
 - [x] ergonomic header reading/writing
-- [ ] html responses
+- [x] html responses
 
 ## 0.0.5 | json io, forms, validation and database
 
