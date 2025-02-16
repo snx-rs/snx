@@ -22,7 +22,7 @@
 
 ## 0.0.5 | json io, forms, validation and database
 
-- [ ] (custom) shared context for all handlers/middleware
+- [ ] shared app context for handlers and middleware (db connection, config, etc.)
 - [ ] ergonomic json response body writing
 - [ ] ergonomic json request body reading
 - [ ] form json request body reading
@@ -39,6 +39,7 @@
 
 ## uncategorized
 
+- custom (user-defined) shared context for all handlers/middleware
 - ranges
 - streaming responses
 - request pipelining

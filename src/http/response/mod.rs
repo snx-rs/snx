@@ -4,6 +4,7 @@ mod into_response;
 use crate::StatusCode;
 
 pub use into_response::IntoResponse;
+use jiff::Zoned;
 
 use super::header::HeaderMap;
 
@@ -124,8 +125,8 @@ impl Response {
             serialized.extend_from_slice(format!("Content-Length: {}\r\n", body.len()).as_bytes());
         }
 
-        let date = chrono::Utc::now()
-            .format("Date: %a, %d %b %Y %H:%M:%S GMT\r\n")
+        let date = Zoned::now()
+            .strftime("Date: %a, %d %b %Y %H:%M:%S GMT\r\n")
             .to_string();
         serialized.extend_from_slice(date.as_bytes());
 
