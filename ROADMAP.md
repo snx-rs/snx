@@ -44,3 +44,6 @@
 - request pipelining
 - transfer encoding
 - content encoding
+- websockets
+- server-sent events
+- static file (dir) serving
