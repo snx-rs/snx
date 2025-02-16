@@ -5,7 +5,7 @@ use crate::{
     http::router::Router,
     middleware::{trace_requests, MiddlewareHandler},
     panic_hook::panic_hook,
-    Server,
+    router, Server,
 };
 
 /// Describes an snx application with sane defaults.
@@ -13,8 +13,8 @@ pub trait App {
     /// Defines the application's routes.
     ///
     /// Sets up an empty router by default.
-    fn with_routes() -> Router {
-        Router::builder().build().unwrap()
+    fn with_routes(builder: router::Builder) -> Router {
+        builder.build().unwrap()
     }
 
     /// Defines the application's configuration.
@@ -41,8 +41,11 @@ pub trait App {
 
 /// Boots the snx framework and starts your application.
 pub fn boot<A: App>() {
-    let router = A::with_routes();
     let config = A::with_config();
+
+    let builder = Router::builder(&config.server.base_url);
+    let router = A::with_routes(builder);
+
     let global_middleware = A::with_global_middleware();
 
     A::with_tracing();

@@ -13,7 +13,7 @@ pub struct Request {
     body: Vec<u8>,
     headers: HeaderMap,
     peer_addr: Option<SocketAddr>,
-    pub params: Option<HashMap<String, String>>,
+    pub params: HashMap<String, String>,
 }
 
 impl Request {

@@ -1,10 +1,10 @@
-use snx::router::Router;
+use snx::router;
 
 struct App;
 
 impl snx::App for App {
-    fn with_routes() -> Router {
-        Router::builder()
+    fn with_routes(builder: router::Builder) -> router::Router {
+        builder
             .get("/", |_| "hello world!")
             .build()
             .unwrap()

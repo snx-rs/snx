@@ -3,6 +3,8 @@ use std::{
     sync::Arc,
 };
 
+use regex::Regex;
+
 use super::{
     handler::Handler,
     middleware::MiddlewareHandler,
@@ -16,96 +18,160 @@ use super::{
 pub struct Route {
     method: Method,
     path: String,
+    host: String,
     handler: Arc<Box<dyn Handler + Send + Sync>>,
     middleware: Vec<MiddlewareHandler>,
 }
 
 impl Route {
-    /// Gets the handler for this route.
+    /// Gets a reference to the path.
     ///
     /// ```
-    /// use snx::{request::Request, router::Router};
+    /// use snx::{request::Request, router::Router, Method};
     ///
     /// let mut request = Request::builder().path("/").build();
-    /// let router = Router::builder()
+    /// let router = Router::builder("localhost")
     ///     .get("/", |_| "hello world!")
     ///     .build()
     ///     .unwrap();
     ///
-    /// let route = router.dispatch(&mut request).unwrap();
-    /// let handler = route.handler();
+    /// let matched_route = router.at(&Method::Get, "localhost", "/").unwrap();
+    /// let path = matched_route.route.path();
     /// ```
-    pub fn handler(&self) -> Arc<Box<dyn Handler + Send + Sync>> {
-        self.handler.clone()
+    pub fn path(&self) -> String {
+        self.path.clone()
     }
 
-    /// Gets the middleware for this route.
+    /// Gets a reference to the handler.
     ///
     /// ```
-    /// use snx::{request::Request, router::Router};
+    /// use snx::{request::Request, router::Router, Method};
     ///
     /// let mut request = Request::builder().path("/").build();
-    /// let router = Router::builder()
+    /// let router = Router::builder("localhost")
     ///     .get("/", |_| "hello world!")
     ///     .build()
     ///     .unwrap();
     ///
-    /// let route = router.dispatch(&mut request).unwrap();
-    /// let middleware = route.middleware();
+    /// let matched_route = router.at(&Method::Get, "localhost", "/").unwrap();
+    /// let handler = matched_route.route.handler();
     /// ```
-    pub fn middleware(&self) -> Vec<MiddlewareHandler> {
-        self.middleware.clone()
+    pub fn handler(&self) -> &Arc<Box<dyn Handler + Send + Sync>> {
+        &self.handler
+    }
+
+    /// Gets a reference to the middleware.
+    ///
+    /// ```
+    /// use snx::{request::Request, router::Router, Method};
+    ///
+    /// let router = Router::builder("localhost")
+    ///     .get("/", |_| "hello world!")
+    ///     .build()
+    ///     .unwrap();
+    ///
+    /// let matched_route = router.at(&Method::Get, "localhost", "/").unwrap();
+    /// let middleware = matched_route.route.middleware();
+    /// ```
+    pub fn middleware(&self) -> &Vec<MiddlewareHandler> {
+        &self.middleware
     }
 }
 
-/// Routes a [Request] to the correct handler.
+pub struct MatchedRoute<'a> {
+    pub route: &'a Route,
+    pub parameters: HashMap<String, String>,
+}
+
+/// Used to route a [Request] to the correct route.
 pub struct Router {
-    method_routers: HashMap<Method, matchit::Router<Route>>,
+    hosts: HashMap<String, (Regex, HashMap<Method, matchit::Router<Route>>)>,
 }
 
 impl Router {
     /// Creates a new builder-style object to manufacture a router.
-    ///
-    /// ```
-    /// use snx::router::Router;
-    ///
-    /// let builder = Router::builder();
-    /// ```
-    pub fn builder() -> Builder {
-        Builder::new()
+    pub fn builder(host: &str) -> Builder {
+        Builder {
+            host: host.to_string(),
+            ..Default::default()
+        }
     }
 
-    /// Dispatches a [Request] to the [Router], tries to find a matching [Route] and returns it
-    /// with its parameters.
+    /// Tries to find routes matching the given criteria and returns the first one with its path
+    /// and host parameters.
     ///
     /// ```
-    /// use snx::{request::Request, router::Router};
+    /// use snx::{router::Router, Method};
     ///
-    /// let mut request = Request::builder().path("/").build();
-    /// let router = Router::builder()
-    ///     .get("/", |_| "hello world!")
+    /// let router = Router::builder("localhost")
+    ///     .get("/", |_| "hello, world!")
     ///     .build()
     ///     .unwrap();
+    /// let matched_route = router.at(&Method::Get, "localhost", "/").unwrap();
     ///
-    /// let route = router.dispatch(&mut request);
+    /// assert_eq!(&matched_route.route.path(), "/")
     /// ```
-    pub fn dispatch(&self, request: &mut Request) -> Result<Route, matchit::MatchError> {
-        let router = self
-            .method_routers
-            .get(&request.method())
-            .ok_or(matchit::MatchError::NotFound)?;
+    pub fn at(&self, method: &Method, host: &str, path: &str) -> Result<MatchedRoute, RouterError> {
+        for (host_key, (pattern, methods)) in &self.hosts {
+            let compiled_host_regex = compile_host_pattern(host_key);
 
-        let path = request.path();
-        let route = router.at(&path)?;
+            if let Some(captures) = pattern.captures(host) {
+                if let Some(router) = methods.get(method) {
+                    if let Ok(route) = router.at(path) {
+                        let mut parameters = HashMap::new();
 
-        let mut params = HashMap::new();
-        for (key, value) in route.params.iter() {
-            params.insert(key.to_string(), value.to_string());
+                        for name in compiled_host_regex.capture_names().flatten() {
+                            if let Some(m) = captures.name(name) {
+                                parameters.insert(name.to_string(), m.as_str().to_string());
+                            }
+                        }
+
+                        for (key, value) in route.params.iter() {
+                            parameters.insert(key.to_string(), value.to_string());
+                        }
+
+                        return Ok(MatchedRoute {
+                            route: route.value,
+                            parameters,
+                        });
+                    } else {
+                        return Err(match self.find_alternatives(path, methods) {
+                            true => RouterError::MethodNotAllowed,
+                            false => RouterError::NotFound,
+                        });
+                    }
+                } else {
+                    return Err(match self.find_alternatives(path, methods) {
+                        true => RouterError::MethodNotAllowed,
+                        false => RouterError::NotFound,
+                    });
+                }
+            }
         }
-        request.params = Some(params);
 
-        Ok(route.value.clone())
+        Err(RouterError::NotFound)
     }
+
+    /// Returns whether or not a route exists in the method router for the given path.
+    fn find_alternatives(
+        &self,
+        path: &str,
+        methods: &HashMap<Method, matchit::Router<Route>>,
+    ) -> bool {
+        for router in methods {
+            if router.1.at(path).is_ok() {
+                return true;
+            }
+        }
+
+        false
+    }
+}
+
+#[derive(Debug)]
+pub enum RouterError {
+    NotFound,
+    MethodNotAllowed,
 }
 
 /// Defines a method for adding routes to the Builder with the given method.
@@ -116,6 +182,7 @@ macro_rules! define_route_method {
             self.routes.push(Route {
                 method: Method::$v,
                 path: path.to_string(),
+                host: self.host.clone(),
                 handler: Arc::new(Box::new(handler) as Box<dyn Handler>),
                 middleware: Default::default(),
             });
@@ -125,33 +192,23 @@ macro_rules! define_route_method {
     };
 }
 
-/// A router builder.
+/// A builder-style object used to build a router.
 #[derive(Default)]
 pub struct Builder {
-    prefix: Option<&'static str>,
-    children: Vec<Builder>,
+    host: String,
+    prefix: Option<String>,
     middleware: Vec<MiddlewareHandler>,
     routes: Vec<Route>,
+    children: Vec<Builder>,
 }
 
 impl Builder {
-    /// Creates a new default instance of the router builder.
-    ///
-    /// ```
-    /// use snx::router;
-    ///
-    /// let builder = router::Builder::new();
-    /// ```
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     /// Adds a new group with a prefix to the builder.
     ///
     /// ```
     /// use snx::router::Router;
     ///
-    /// let router = Router::builder()
+    /// let router = Router::builder("localhost")
     ///     .prefix("/posts", |router| {
     ///         router
     ///             .post("/", |_| "creates a post")
@@ -164,8 +221,34 @@ impl Builder {
     ///     .unwrap();
     /// ```
     pub fn prefix(mut self, prefix: &'static str, body: impl Fn(Builder) -> Builder) -> Self {
-        let mut builder = Self::new();
-        builder.prefix = Some(prefix);
+        let mut builder = Self {
+            host: self.host.clone(),
+            prefix: Some(prefix.to_string()),
+            ..Default::default()
+        };
+
+        builder = body(builder);
+        self.children.push(builder);
+
+        self
+    }
+
+    /// Adds a new group with a host to the builder.
+    ///
+    /// ```
+    /// use snx::router::Router;
+    ///
+    /// let router = Router::builder("localhost")
+    ///     .host("{tenant}.acme.com", |router| {
+    ///         router.get("/", |_| "tenant home page here")
+    ///     })
+    ///     .build()
+    ///     .unwrap();
+    pub fn host(mut self, host: &'static str, body: impl Fn(Builder) -> Builder) -> Self {
+        let mut builder = Self {
+            host: host.to_string(),
+            ..Default::default()
+        };
 
         builder = body(builder);
         self.children.push(builder);
@@ -184,7 +267,7 @@ impl Builder {
     ///     Box::new(next())
     /// };
     ///
-    /// let router = Router::builder()
+    /// let router = Router::builder("localhost")
     ///     .middleware(&[my_middleware], |router| {
     ///         router.get("/", |_| "hello world!")
     ///     })
@@ -198,7 +281,10 @@ impl Builder {
                       + Sync],
         body: impl Fn(Builder) -> Builder,
     ) -> Self {
-        let mut builder = Self::new();
+        let mut builder = Self {
+            host: self.host.clone(),
+            ..Self::default()
+        };
 
         for handler in middleware {
             builder.middleware.push(Arc::new(Box::new(handler)
@@ -225,59 +311,77 @@ impl Builder {
     define_route_method!(trace, Trace);
     define_route_method!(patch, Patch);
 
-    /// Recursively adds (compounding) prefixes and middleware to all of this builders children.
-    pub fn resolve(
-        &mut self,
-        mut prefixes: Vec<&'static str>,
-        mut middleware: Vec<MiddlewareHandler>,
-    ) -> &Builder {
-        if let Some(prefix) = self.prefix {
-            prefixes.push(prefix)
-        }
-        middleware.extend(self.middleware.clone());
+    /// Builds a router.
+    pub fn build(self) -> Result<Router, matchit::InsertError> {
+        let mut hosts = HashMap::new();
 
-        for route in &mut self.routes {
-            route.middleware.extend(middleware.clone());
-            route.path = format!("{}{}", prefixes.join("/"), route.path);
-        }
-
-        for child in &mut self.children {
-            let resolved = child.resolve(prefixes.clone(), middleware.clone());
-            for route in resolved.routes.clone() {
-                self.routes.push(route);
-            }
-        }
-
-        self
-    }
-
-    /// Builds the router.
-    ///
-    /// ```
-    /// use snx::router;
-    ///
-    /// let router = router::Builder::new().build();
-    /// ```
-    pub fn build(mut self) -> Result<Router, matchit::InsertError> {
-        let mut method_routers: HashMap<Method, matchit::Router<Route>> = HashMap::new();
-
-        let prefixes = vec![];
-        let middleware = vec![];
-
-        self.resolve(prefixes, middleware);
-
-        for route in self.routes {
-            if let Entry::Vacant(e) = method_routers.entry(route.method.clone()) {
+        for route in self.resolve(&mut vec![], &mut vec![]) {
+            if let Entry::Vacant(e) = hosts.entry(route.host.clone()) {
                 let mut router = matchit::Router::new();
                 router.insert(route.path.clone(), route.clone())?;
 
-                e.insert(router);
+                let mut methods = HashMap::new();
+                methods.insert(route.method, router);
+
+                let pattern = compile_host_pattern(&route.host);
+
+                e.insert((pattern, methods));
             } else {
-                let router = method_routers.get_mut(&route.method).unwrap();
-                router.insert(route.path.clone(), route)?;
+                let (_, methods) = hosts.get_mut(&route.host).unwrap();
+
+                if let Some(router) = methods.get_mut(&route.method) {
+                    router.insert(route.path.clone(), route.clone())?;
+                } else {
+                    let mut router = matchit::Router::new();
+                    router.insert(route.path.clone(), route.clone())?;
+
+                    methods.insert(route.method, router);
+                }
             }
         }
 
-        Ok(Router { method_routers })
+        Ok(Router { hosts })
     }
+
+    /// Recursively adds (compounding) prefixes and middleware to all of this builders' children,
+    /// combines the children's routes into its own and returns them.
+    fn resolve(
+        mut self,
+        prefixes: &mut Vec<String>,
+        middleware: &mut Vec<MiddlewareHandler>,
+    ) -> Vec<Route> {
+        if let Some(prefix) = self.prefix {
+            prefixes.push(prefix);
+        }
+        middleware.extend(self.middleware);
+
+        for route in &mut self.routes {
+            if prefixes.is_empty() && route.path.len() > 1 {
+                route.path = route.path.trim_end_matches('/').to_string();
+            }
+
+            route.middleware.extend(middleware.clone());
+            route.path = format!("{}{}", prefixes.join("/"), route.path);
+            route.host = self.host.clone();
+        }
+
+        for child in self.children {
+            self.routes
+                .extend_from_slice(&child.resolve(prefixes, middleware));
+        }
+
+        self.routes
+    }
+}
+
+/// Compiles a regular expression that captures dynamic components of a hostname.
+fn compile_host_pattern(pattern: &str) -> Regex {
+    let mut regex_pattern = regex::escape(pattern);
+
+    regex_pattern = regex_pattern
+        .replace(r"\{", "(?P<")
+        .replace(r"\}", ">[^.]+)");
+    regex_pattern = regex_pattern.replace(r"\*", "[^.]+");
+
+    Regex::new(&format!("^{}$", regex_pattern)).expect("Invalid regex")
 }

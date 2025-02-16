@@ -13,8 +13,8 @@
 
 ## 0.0.4 | improved http handling and more routing options
 
-- [ ] (sub)domain routing
-- [ ] respond with 405 when incorrect method is used
+- [x] (sub)domain routing
+- [x] respond with 405 when incorrect method is used
 - [x] date header
 - [x] body reading (raw and string) and reading/writing content-length
 - [x] ergonomic header reading/writing
@@ -28,6 +28,14 @@
 - [ ] form json request body reading
 - [ ] validation
 - [ ] diesel integration
+- [ ] flash messages
+- [ ] easy creating of CRUD (API) routes and controllers
+
+## 0.0.6 templating & forms
+
+- [ ] engine-agnostic templating
+- [ ] form request body parsing/reading (with validation)
+- [ ] ergonomic redirects
 
 ## uncategorized
 

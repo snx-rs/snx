@@ -1,6 +1,8 @@
 use std::{collections::HashMap, ops::Deref};
 
 /// A multimap of HTTP headers to values.
+///
+/// Header names are case-insensitive.
 #[derive(Clone, Default, Debug)]
 pub struct HeaderMap(HashMap<String, Vec<String>>);
 
@@ -22,7 +24,7 @@ impl HeaderMap {
         match self.0.get_mut(name) {
             Some(values) => values.push(value.to_string()),
             None => {
-                self.0.insert(name.to_string(), vec![value.to_string()]);
+                self.0.insert(name.to_lowercase(), vec![value.to_string()]);
             }
         }
     }
@@ -38,7 +40,7 @@ impl HeaderMap {
     /// let content_type = headers.get("Content-Type").unwrap();
     /// ```
     pub fn get(&self, name: &str) -> Option<String> {
-        self.0.get(name)?.first().cloned()
+        self.0.get(&name.to_lowercase())?.first().cloned()
     }
 
     /// Gets all values of a header.
@@ -53,7 +55,7 @@ impl HeaderMap {
     /// let encodings = headers.get_all("Transfer-Encoding").unwrap();
     /// ```
     pub fn get_all(&self, name: &str) -> Option<Vec<String>> {
-        self.0.get(name).cloned()
+        self.0.get(&name.to_lowercase()).cloned()
     }
 }
 
@@ -61,7 +63,7 @@ impl From<(&str, &str)> for HeaderMap {
     fn from(val: (&str, &str)) -> Self {
         let mut map = HeaderMap::new();
 
-        map.insert(val.0, val.1);
+        map.insert(&val.0.to_lowercase(), val.1);
 
         map
     }

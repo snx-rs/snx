@@ -17,7 +17,8 @@ pub fn trace_requests(req: Request, next: Box<dyn Fn() -> Response>) -> Box<dyn 
     let elapsed = now.elapsed().unwrap();
 
     tracing::info!(
-        "{} \"{} {}\" {} {}B {}ms",
+        "{} {} \"{} {}\" {} {}B {}ms",
+        req.headers().get("host").unwrap_or("-".to_string()),
         req.peer_addr().map(|p| p.to_string()).unwrap_or_default(),
         req.method(),
         req.path(),

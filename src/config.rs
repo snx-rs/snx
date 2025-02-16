@@ -9,6 +9,7 @@ pub struct Config {
 
 #[derive(Deserialize, Debug)]
 pub struct ServerConfig {
+    pub base_url: String,
     pub host: String,
     pub port: u16,
     pub num_threads: usize,

@@ -15,6 +15,7 @@ rayon = "1.10.0"
 # http and routing
 httparse = "1.9.5"
 matchit = "0.8.6"
+regex = "1.11.1"
 
 # error handling
 thiserror = "2.0.11"

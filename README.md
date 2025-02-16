@@ -25,17 +25,31 @@ this does come with a couple of trade-offs, namely ... TBA
 ###### flexible routing
 
 snx provides a fast, ergonomic and macro-free routing system based on `matchit`
-that supports dynamic route segments, wildcards, prefixes and middleware.
+that supports dynamic route segments, wildcards, prefixes, middleware and
+hostname-based routing.
 
 ```rust
 Router::builder()
-    .prefix("/users", |router| {
-        router
-            .post("/", store_user)
-            .get("/", list_users)
-            .get("/{id}", get_user)
-            .put("/{id}", update_user)
-            .delete("/{id}", delete_user)
+    .get("/", show_index)
+    .get("/contact", show_contact)
+    .post("/contact", submit_contact)
+    .host("{tenant}.acme.com", |builder| {
+        builder
+            .get("/", show_tenant_index)
+            .get("/media/{*path}", retrieve_tenant_media)
+    })
+    .middleware(&[auth], |builder| {
+        builder
+            .prefix("/dashboard/tenants", |builder| {
+                builder
+                    .get("/create", show_create_tenant)
+                    .post("/", store_tenant)
+                    .get("/", show_tenants)
+                    .get("/{id}", show_tenant)
+                    .get("/{id}/edit", show_edit_tenant)
+                    .post("/{id}", update_tenant)
+                    .delete("/{id}", delete_tenant)
+            })
     })
     .build()
     .unwrap()

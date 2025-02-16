@@ -16,7 +16,7 @@ use crate::{
         StatusCode,
     },
     middleware::MiddlewareHandler,
-    router::Router,
+    router::{Router, RouterError},
 };
 
 /// Encapsulates functionality to serve HTTP requests.
@@ -35,7 +35,7 @@ impl Server {
     /// ```
     /// use snx::{Server, router::Router};
     ///
-    /// let router = Router::builder().build().unwrap();
+    /// let router = Router::builder("localhost").build().unwrap();
     /// let global_middleware = vec![];
     /// let server = Server::try_bind("127.0.0.1:2002", router, global_middleware).expect("failed to bind listener");
     /// ```
@@ -59,7 +59,7 @@ impl Server {
     /// ```no_run
     /// use snx::{Server, router::Router};
     ///
-    /// let router = Router::builder().build().unwrap();
+    /// let router = Router::builder("localhost").build().unwrap();
     /// Server::try_bind("127.0.0.1:2002", router, vec![])
     ///     .expect("failed to bind to listener")
     ///     .serve();
@@ -89,7 +89,7 @@ impl Server {
     /// ```
     /// use snx::{Server, router::Router};
     ///
-    /// let router = Router::builder().build().unwrap();
+    /// let router = Router::builder("localhost").build().unwrap();
     /// let server = Server::try_bind("127.0.0.1:2002", router, vec![])
     ///     .expect("failed to bind to listener")
     ///     .num_threads(4);
@@ -115,14 +115,30 @@ impl Server {
 
                 let into_response: Box<dyn IntoResponse> =
                     match Request::try_parse_from_bytes(&buffer, stream.peer_addr().ok()) {
-                        Ok(mut request) => match self.router.dispatch(&mut request) {
-                            Ok(route) => self.execute(route.handler(), route.middleware(), request),
-                            Err(_) => self.execute(
-                                Arc::new(Box::new(|_| StatusCode::NotFound)),
-                                vec![],
-                                request,
-                            ),
-                        },
+                        Ok(mut request) => {
+                            let host = request.headers().get("host").unwrap();
+                            match self.router.at(&request.method(), &host, &request.path()) {
+                                Ok(route) => {
+                                    request.params = route.parameters;
+
+                                    self.execute(
+                                        route.route.handler().clone(),
+                                        route.route.middleware().clone(),
+                                        request,
+                                    )
+                                }
+                                Err(RouterError::NotFound) => self.execute(
+                                    Arc::new(Box::new(|_| StatusCode::NotFound)),
+                                    vec![],
+                                    request,
+                                ),
+                                Err(RouterError::MethodNotAllowed) => self.execute(
+                                    Arc::new(Box::new(|_| StatusCode::MethodNotAllowed)),
+                                    vec![],
+                                    request,
+                                ),
+                            }
+                        }
                         Err(e) => {
                             tracing::warn!("could not parse request: {e}");
 
