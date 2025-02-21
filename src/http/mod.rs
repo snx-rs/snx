@@ -45,12 +45,12 @@ impl From<&str> for Method {
             "GET" => Method::Get,
             "HEAD" => Method::Head,
             "POST" => Method::Post,
-            "Put" => Method::Put,
-            "Delete" => Method::Delete,
-            "Connect" => Method::Connect,
-            "Options" => Method::Options,
-            "Trace" => Method::Trace,
-            "Patch" => Method::Patch,
+            "PUT" => Method::Put,
+            "DELETE" => Method::Delete,
+            "CONNECT" => Method::Connect,
+            "OPTIONS" => Method::Options,
+            "TRACE" => Method::Trace,
+            "PATCH" => Method::Patch,
             s => Method::NonStandard(s.to_string()),
         }
     }

@@ -1,0 +1,8 @@
+[server]
+base_url = "localhost:2002"
+host = "127.0.0.1"
+port = 2002
+num_threads = 4
+
+[database]
+url = "database.db"

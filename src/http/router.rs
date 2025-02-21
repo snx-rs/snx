@@ -5,6 +5,8 @@ use std::{
 
 use regex::Regex;
 
+use crate::Context;
+
 use super::{
     handler::Handler,
     middleware::MiddlewareHandler,
@@ -276,7 +278,7 @@ impl Builder {
     /// ```
     pub fn middleware(
         mut self,
-        middleware: &'static [impl Fn(Request, Box<dyn Fn() -> Response>) -> Box<dyn IntoResponse>
+        middleware: &'static [impl Fn(Context, Request, Box<dyn Fn() -> Response>) -> Box<dyn IntoResponse>
                       + Send
                       + Sync],
         body: impl Fn(Builder) -> Builder,
@@ -289,7 +291,7 @@ impl Builder {
         for handler in middleware {
             builder.middleware.push(Arc::new(Box::new(handler)
                 as Box<
-                    dyn Fn(Request, Box<dyn Fn() -> Response>) -> Box<dyn IntoResponse>
+                    dyn Fn(Context, Request, Box<dyn Fn() -> Response>) -> Box<dyn IntoResponse>
                         + Send
                         + Sync,
                 >));
@@ -362,6 +364,13 @@ impl Builder {
 
             route.middleware.extend(middleware.clone());
             route.path = format!("{}{}", prefixes.join("/"), route.path);
+
+            if route.path.len() > 1 {
+                if let Some(path) = route.path.strip_suffix('/') {
+                    route.path = path.to_string();
+                }
+            }
+
             route.host = self.host.clone();
         }
 

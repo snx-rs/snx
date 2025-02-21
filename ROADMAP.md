@@ -22,20 +22,26 @@
 
 ## 0.0.5 | json io, forms, validation and database
 
-- [ ] shared app context for handlers and middleware (db connection, config, etc.)
-- [ ] ergonomic json response body writing
-- [ ] ergonomic json request body reading
-- [ ] form json request body reading
+- [x] shared app context for handlers and middleware (db connection and config)
+- [x] ergonomic json response body writing
+- [x] ergonomic json request body reading
 - [ ] validation
-- [ ] diesel integration
-- [ ] flash messages
-- [ ] easy creating of CRUD (API) routes and controllers
+- [x] diesel integration
 
-## 0.0.6 templating & forms
+## 0.0.6 session and cookies
+
+- [ ] pass data from middleware to middleware/handler
+- [ ] session storage
+- [ ] flash messages
+- [ ] cookies
+
+## 0.0.7 templating & forms
 
 - [ ] engine-agnostic templating
 - [ ] form request body parsing/reading (with validation)
 - [ ] ergonomic redirects
+- [ ] static file (dir) serving (maybe)
+- [ ] csrf
 
 ## uncategorized
 
@@ -47,4 +53,6 @@
 - content encoding
 - websockets
 - server-sent events
-- static file (dir) serving
+- easy creating of CRUD (API) routes and controllers (api resources)
+- authentication
+- cors

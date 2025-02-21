@@ -1,5 +1,9 @@
 use std::{collections::HashMap, net::SocketAddr, str};
 
+use serde::de::DeserializeOwned;
+
+use crate::json::InvalidJsonBodyError;
+
 use super::{header::HeaderMap, Method};
 
 /// The maxmimum amount of headers that will be parsed.
@@ -124,6 +128,11 @@ impl Request {
     /// ```
     pub fn string(&self) -> Result<String, str::Utf8Error> {
         str::from_utf8(&self.body).map(|s| s.to_string())
+    }
+
+    /// Tries to deserialize the JSON body into the specified struct.
+    pub fn json<T: DeserializeOwned>(&self) -> Result<T, InvalidJsonBodyError> {
+        serde_json::from_slice::<T>(&self.body).map_err(|e| e.into())
     }
 
     /// Tries to parse a request object from a buffer of bytes.

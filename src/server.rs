@@ -17,14 +17,16 @@ use crate::{
     },
     middleware::MiddlewareHandler,
     router::{Router, RouterError},
+    Context,
 };
 
 /// Encapsulates functionality to serve HTTP requests.
 pub struct Server {
     listener: net::TcpListener,
-    num_threads: Option<usize>,
-    global_middleware: Vec<MiddlewareHandler>,
     router: Router,
+    ctx: Context,
+    global_middleware: Vec<MiddlewareHandler>,
+    num_threads: Option<usize>,
 }
 
 type ChainOperator = Rc<Box<dyn Fn(Request) -> Box<dyn IntoResponse>>>;
@@ -42,6 +44,7 @@ impl Server {
     pub fn try_bind(
         addr: impl net::ToSocketAddrs,
         router: Router,
+        ctx: Context,
         global_middleware: Vec<MiddlewareHandler>,
     ) -> io::Result<Self> {
         let listener = net::TcpListener::bind(addr)?;
@@ -50,6 +53,7 @@ impl Server {
             listener,
             num_threads: None,
             router,
+            ctx,
             global_middleware,
         })
     }
@@ -128,12 +132,12 @@ impl Server {
                                     )
                                 }
                                 Err(RouterError::NotFound) => self.execute(
-                                    Arc::new(Box::new(|_| StatusCode::NotFound)),
+                                    Arc::new(Box::new(|_, _| StatusCode::NotFound)),
                                     vec![],
                                     request,
                                 ),
                                 Err(RouterError::MethodNotAllowed) => self.execute(
-                                    Arc::new(Box::new(|_| StatusCode::MethodNotAllowed)),
+                                    Arc::new(Box::new(|_, _| StatusCode::MethodNotAllowed)),
                                     vec![],
                                     request,
                                 ),
@@ -164,12 +168,13 @@ impl Server {
         request: Request,
     ) -> Box<dyn IntoResponse> {
         let mut middleware = middleware.clone();
+        let ctx = self.ctx.clone();
         let mut chain: Vec<ChainOperator> = Vec::with_capacity(middleware.len() + 1);
 
         // first, add the actual handler call to the chain (this will be called last)
         chain.push(Rc::new(Box::new(move |request: Request| {
             catch_unwind(AssertUnwindSafe(|| {
-                trigger(request.clone(), handler.clone())
+                trigger(ctx.clone(), request.clone(), handler.clone())
             }))
             .unwrap_or(Box::new(StatusCode::InternalServerError))
         })));
@@ -178,9 +183,12 @@ impl Server {
         // order.
         middleware.extend_from_slice(&self.global_middleware);
         for handler in middleware {
+            let ctx = self.ctx.clone();
             let op = chain.last().unwrap().clone();
+
             chain.push(Rc::new(Box::new(move |request: Request| {
                 (handler)(
+                    ctx.clone(),
                     request.clone(),
                     Box::new({
                         let value = op.clone();

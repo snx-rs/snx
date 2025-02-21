@@ -1,0 +1,15 @@
+[package]
+name = "json-rest-api"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+
+[dependencies]
+snx = { path = "../../", features = ["sqlite"] }
+diesel = { version = "2.2.0", features = ["sqlite", "returning_clauses_for_sqlite_3_35"] }
+serde = { version = "1.0.217", features = ["derive"] }
+thiserror = "2.0.11"

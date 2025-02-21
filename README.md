@@ -1,15 +1,8 @@
 # snx
 
-snx is an experimental batteries-included web framework for Rust.
+snx is an experimental, opiniated and batteries-included web framework that allows you to quickly develop robust web applications using Rust.
 
-## design goals
-
-snx is designed to fill the gap of non-async batteries-included web frameworks
-in the Rust ecosystem.
-
-we try to keep the amount of dependencies used by snx to a minimum.
-
-## high level features
+## overview of features
 
 ###### non-async
 
@@ -42,11 +35,9 @@ Router::builder()
         builder
             .prefix("/dashboard/tenants", |builder| {
                 builder
-                    .get("/create", show_create_tenant)
                     .post("/", store_tenant)
                     .get("/", show_tenants)
                     .get("/{id}", show_tenant)
-                    .get("/{id}/edit", show_edit_tenant)
                     .post("/{id}", update_tenant)
                     .delete("/{id}", delete_tenant)
             })
@@ -55,10 +46,47 @@ Router::builder()
     .unwrap()
 ```
 
+##### handlers
+
+handlers in snx are functions or closures which take 2 arguments (a context and
+a request) and produce anything that can be turned into a response. the first
+argument can be used to interact with parts of your applications, for example,
+executing database queries, sending emails or rendering templates. the second
+argument contains all the request information and allows you to read incoming
+data from the request and act on it accordingly.
+
+```rust
+#[derive(Deserialize, Insertable)]
+#[diesel(table_name = crate::schema::tenants)]
+struct StoreTenantPayload {
+    name: String,
+}
+
+fn store_tenant(ctx: Context, req: Request) -> Result<(StatusCode, Json<Tenant>)> {
+    let payload = req.json::<StoreTenantPayload>()?;
+    let tenant = payload
+        .insert_into(tenants)
+        .get_result::<Tenant>(&mut ctx.db.get().unwrap())?;
+
+    Ok((StatusCode::Created, Json(tenant)))
+}
+```
+
+##### middleware
+
+middleware in snx are almost exactly like handlers but they take 3 arguments (a
+context, a request and a next function). the third argument is used to call the
+next middleware/handler in the chain. middleware are layered like an onion, just
+like axum.
+
+```rust
+// TODO: add a middleware example
+```
+
 ## non-features
 
 ###### HTTP/2, HTTP/3 and TLS/SSL
 
-snx is designed to sit behind a reverse proxy and thus only supports HTTP/1.1
-without TLS/SSL. configure a reverse proxy (e.g. nginx or Caddy) for HTTP/2, HTTP/3
-and TLS/SSL.
+snx is designed to sit behind a reverse proxy and only supports HTTP/1.1 without
+TLS/SSL. configure a reverse proxy (e.g. nginx or Caddy) for HTTP/2, HTTP/3 and
+TLS/SSL.

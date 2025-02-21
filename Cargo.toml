@@ -8,6 +8,22 @@ documentation = "https://docs.rs/snx"
 repository = "https://github.com/snx-rs/snx"
 license = "MIT"
 
+[features]
+sqlite = [
+	"dep:diesel",
+	"dep:jiff-diesel",
+	"diesel/sqlite",
+	"diesel/returning_clauses_for_sqlite_3_35",
+	"jiff-diesel/sqlite",
+]
+postgres = [
+	"dep:diesel",
+	"dep:jiff-diesel",
+	"diesel/postgres",
+	"jiff-diesel/postgres",
+]
+mysql = ["dep:diesel", "dep:jiff-diesel", "diesel/mysql", "jiff-diesel/mysql"]
+
 [dependencies]
 # threading
 rayon = "1.10.0"
@@ -26,6 +42,11 @@ toml = "0.8.19"
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
 
+# database
+diesel = { version = "2.2.0", features = ["r2d2"], optional = true }
+jiff-diesel = { version = "0.1.0", optional = true }
+
 # other
 jiff = "0.2.0"
 serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.138"

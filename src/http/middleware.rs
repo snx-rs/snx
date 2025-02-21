@@ -1,15 +1,22 @@
 use std::{sync::Arc, time::SystemTime};
 
+use crate::Context;
+
 use super::{
     request::Request,
     response::{IntoResponse, Response},
 };
 
-pub type MiddlewareHandler =
-    Arc<Box<dyn Fn(Request, Box<dyn Fn() -> Response>) -> Box<dyn IntoResponse> + Send + Sync>>;
+pub type MiddlewareHandler = Arc<
+    Box<dyn Fn(Context, Request, Box<dyn Fn() -> Response>) -> Box<dyn IntoResponse> + Send + Sync>,
+>;
 
 /// Built-in middleware to trace requests.
-pub fn trace_requests(req: Request, next: Box<dyn Fn() -> Response>) -> Box<dyn IntoResponse> {
+pub fn trace_requests(
+    _: Context,
+    req: Request,
+    next: Box<dyn Fn() -> Response>,
+) -> Box<dyn IntoResponse> {
     let now = SystemTime::now();
 
     let res = next();
