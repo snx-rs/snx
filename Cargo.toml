@@ -1,6 +1,6 @@
 [package]
 name = "snx"
-version = "0.0.4"
+version = "0.0.5"
 edition = "2021"
 description = "an experimental batteries-included web framework for Rust"
 authors = ["Julian Ollivieira"]
