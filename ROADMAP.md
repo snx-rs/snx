@@ -20,12 +20,11 @@
 - [x] ergonomic header reading/writing
 - [x] html responses
 
-## 0.0.5 | json io, forms, validation and database
+## 0.0.5 | json io and database
 
 - [x] shared app context for handlers and middleware (db connection and config)
 - [x] ergonomic json response body writing
 - [x] ergonomic json request body reading
-- [ ] validation
 - [x] diesel integration
 
 ## 0.0.6 session and cookies
@@ -35,9 +34,10 @@
 - [ ] flash messages
 - [ ] cookies
 
-## 0.0.7 templating & forms
+## 0.0.7 templating, forms and validation
 
-- [ ] engine-agnostic templating
+- [ ] validation
+- [ ] templating engine
 - [ ] form request body parsing/reading (with validation)
 - [ ] ergonomic redirects
 - [ ] static file (dir) serving (maybe)
