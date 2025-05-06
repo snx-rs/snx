@@ -9,7 +9,7 @@ repository = "https://github.com/snx-rs/snx"
 license = "MIT"
 
 [features]
-default = ["cookies", "json"]
+default = ["cookies", "json", "templating"]
 sqlite = [
 	"dep:diesel",
 	"dep:jiff-diesel",
@@ -26,6 +26,7 @@ postgres = [
 mysql = ["dep:diesel", "dep:jiff-diesel", "diesel/mysql", "jiff-diesel/mysql"]
 cookies = ["dep:biscotti"]
 json = ["dep:serde_json"]
+templating = ["dep:sjabloon"]
 
 [dependencies]
 # threading
@@ -49,6 +50,9 @@ tracing-subscriber = "0.3.19"
 # database
 diesel = { version = "2.2.0", features = ["r2d2"], optional = true }
 jiff-diesel = { version = "0.1.0", optional = true }
+
+# templating
+sjabloon = { version = "0.0.2", optional = true }
 
 # other
 jiff = "0.2.0"

@@ -19,3 +19,6 @@ pub use server::Server;
 
 #[cfg(feature = "json")]
 pub use json::{InvalidJsonBodyError, Json};
+
+#[cfg(feature = "templating")]
+pub use sjabloon::template;
