@@ -77,10 +77,6 @@ context, a request and a next function). the third argument is used to call the
 next middleware/handler in the chain. middleware are layered like an onion, just
 like axum.
 
-```rust
-// TODO: add a middleware example
-```
-
 ## non-features
 
 ###### HTTP/2, HTTP/3 and TLS/SSL
