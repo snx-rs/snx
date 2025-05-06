@@ -73,6 +73,22 @@ impl Request {
         self.headers.clone()
     }
 
+    /// Gets the cookies for this request.
+    ///
+    /// ```
+    /// use snx::request::Request;
+    ///
+    /// let request = Request.builder().header("Cookie", "name=value").build();
+    /// let cookies = request.cookies();
+    /// ```
+    #[cfg(feature = "cookies")]
+    pub fn cookies(&self) -> Option<biscotti::RequestCookies> {
+        self.headers.get_ref("cookie").map(|value| {
+            let processor: biscotti::Processor = biscotti::ProcessorConfig::default().into();
+            biscotti::RequestCookies::parse_header(value, &processor).unwrap()
+        })
+    }
+
     /// Gets the peer address for this request.
     ///
     /// ```

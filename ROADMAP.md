@@ -1,6 +1,6 @@
 # roadmap and milestones
 
-## 0.0.3 | core functionality and validating the idea
+## 0.0.3 | core functionality
 
 - [x] basic non-async http/1.1 server
 - [x] flexible router (with dynamic route segments, wildcards, methods, prefixes and middleware groups)
@@ -31,7 +31,6 @@
 
 - [ ] pass data from middleware to middleware/handler
 - [ ] session storage
-- [ ] flash messages
 - [ ] cookies
 
 ## 0.0.7 templating, forms and validation
@@ -56,3 +55,4 @@
 - easy creating of CRUD (API) routes and controllers (api resources)
 - authentication
 - cors
+- flash messages

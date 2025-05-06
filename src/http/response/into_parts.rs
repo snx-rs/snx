@@ -27,16 +27,19 @@ impl IntoParts for HeaderMap {
     }
 }
 
-impl<T> IntoParts for T
-where
-    T: AsRef<[(&'static str, &'static str)]>,
-{
+#[cfg(feature = "cookies")]
+impl IntoParts for biscotti::ResponseCookies<'_> {
     fn into_parts(self, parts: Parts) -> Parts {
         let mut parts = parts.clone();
 
-        for header in self.as_ref() {
-            parts.headers.insert(header.0, header.1);
-        }
+        let processor: biscotti::Processor = biscotti::ProcessorConfig::default().into();
+        parts.headers.insert(
+            "set-cookie",
+            &self
+                .header_values(&processor)
+                .collect::<Vec<String>>()
+                .join("; "),
+        );
 
         parts
     }

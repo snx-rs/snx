@@ -43,6 +43,20 @@ impl HeaderMap {
         self.0.get(&name.to_lowercase())?.first().cloned()
     }
 
+    /// Gets a reference to the first value of a header if it exists.
+    ///
+    /// ```
+    /// use snx::HeaderMap;
+    ///
+    /// let mut headers = HeaderMap::new();
+    /// headers.insert("Content-Type", "application/json");
+    ///
+    /// let content_type = headers.get_ref("Content-Type").unwrap();
+    /// ```
+    pub fn get_ref(&self, name: &str) -> Option<&String> {
+        self.0.get(&name.to_lowercase())?.first()
+    }
+
     /// Gets all values of a header.
     ///
     /// ```
