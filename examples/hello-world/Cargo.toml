@@ -9,4 +9,4 @@ lto = true
 codegen-units = 1
 
 [dependencies]
-snx = { path = "../../" }
+snx = { path = "../../", default-features = false }

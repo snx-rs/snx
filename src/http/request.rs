@@ -1,8 +1,6 @@
 use std::{collections::HashMap, net::SocketAddr, str};
 
-use serde::de::DeserializeOwned;
 
-use crate::json::InvalidJsonBodyError;
 
 use super::{header::HeaderMap, Method};
 
@@ -147,7 +145,8 @@ impl Request {
     }
 
     /// Tries to deserialize the JSON body into the specified struct.
-    pub fn json<T: DeserializeOwned>(&self) -> Result<T, InvalidJsonBodyError> {
+    #[cfg(feature = "json")]
+    pub fn json<T: serde::de::DeserializeOwned>(&self) -> Result<T, crate::json::InvalidJsonBodyError> {
         serde_json::from_slice::<T>(&self.body).map_err(|e| e.into())
     }
 

@@ -9,7 +9,7 @@ repository = "https://github.com/snx-rs/snx"
 license = "MIT"
 
 [features]
-default = ["cookies"]
+default = ["cookies", "json"]
 sqlite = [
 	"dep:diesel",
 	"dep:jiff-diesel",
@@ -25,6 +25,7 @@ postgres = [
 ]
 mysql = ["dep:diesel", "dep:jiff-diesel", "diesel/mysql", "jiff-diesel/mysql"]
 cookies = ["dep:biscotti"]
+json = ["dep:serde_json"]
 
 [dependencies]
 # threading
@@ -52,4 +53,4 @@ jiff-diesel = { version = "0.1.0", optional = true }
 # other
 jiff = "0.2.0"
 serde = { version = "1.0.217", features = ["derive"] }
-serde_json = "1.0.138"
+serde_json = { version = "1.0.138", optional = true }

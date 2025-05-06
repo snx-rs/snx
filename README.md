@@ -46,7 +46,7 @@ Router::builder()
     .unwrap()
 ```
 
-###### handlers
+###### handlers and middleware
 
 handlers in snx are functions or closures which take 2 arguments (a context and
 a request) and produce anything that can be turned into a response. the first
@@ -71,8 +71,6 @@ fn store_tenant(ctx: Context, req: Request) -> Result<(StatusCode, Json<Tenant>)
     Ok((StatusCode::Created, Json(tenant)))
 }
 ```
-
-###### middleware
 
 middleware in snx are almost exactly like handlers but they take 3 arguments (a
 context, a request and a next function). the third argument is used to call the
