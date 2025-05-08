@@ -33,7 +33,7 @@ impl Route {
     ///
     /// let mut request = Request::builder().path("/").build();
     /// let router = Router::builder("localhost")
-    ///     .get("/", |_| "hello world!")
+    ///     .get("/", |_, _| "hello world!")
     ///     .build()
     ///     .unwrap();
     ///
@@ -51,7 +51,7 @@ impl Route {
     ///
     /// let mut request = Request::builder().path("/").build();
     /// let router = Router::builder("localhost")
-    ///     .get("/", |_| "hello world!")
+    ///     .get("/", |_, _| "hello world!")
     ///     .build()
     ///     .unwrap();
     ///
@@ -68,7 +68,7 @@ impl Route {
     /// use snx::{request::Request, router::Router, Method};
     ///
     /// let router = Router::builder("localhost")
-    ///     .get("/", |_| "hello world!")
+    ///     .get("/", |_, _| "hello world!")
     ///     .build()
     ///     .unwrap();
     ///
@@ -106,7 +106,7 @@ impl Router {
     /// use snx::{router::Router, Method};
     ///
     /// let router = Router::builder("localhost")
-    ///     .get("/", |_| "hello, world!")
+    ///     .get("/", |_, _| "hello, world!")
     ///     .build()
     ///     .unwrap();
     /// let matched_route = router.at(&Method::Get, "localhost", "/").unwrap();
@@ -213,11 +213,11 @@ impl Builder {
     /// let router = Router::builder("localhost")
     ///     .prefix("/posts", |router| {
     ///         router
-    ///             .post("/", |_| "creates a post")
-    ///             .get("/", |_| "returns a list of posts")
-    ///             .get("/{id}", |_| "returns a single post")
-    ///             .put("/{id}", |_| "updates a post")
-    ///             .delete("/{id}", |_| "deletes a post")
+    ///             .post("/", |_, _| "creates a post")
+    ///             .get("/", |_, _| "returns a list of posts")
+    ///             .get("/{id}", |_, _| "returns a single post")
+    ///             .put("/{id}", |_, _| "updates a post")
+    ///             .delete("/{id}", |_, _| "deletes a post")
     ///     })
     ///     .build()
     ///     .unwrap();
@@ -242,7 +242,7 @@ impl Builder {
     ///
     /// let router = Router::builder("localhost")
     ///     .host("{tenant}.acme.com", |router| {
-    ///         router.get("/", |_| "tenant home page here")
+    ///         router.get("/", |_, _| "tenant home page here")
     ///     })
     ///     .build()
     ///     .unwrap();
@@ -261,17 +261,17 @@ impl Builder {
     /// Adds a new group with middleware to the builder.
     ///
     /// ```
-    /// use snx::{router::Router, request::Request, response::{IntoResponse, Response}};
+    /// use snx::{Context, router::Router, request::Request, response::{IntoResponse, Response}};
     ///
-    /// fn my_middleware(_req: Request, next: Box<dyn Fn() -> Response>) -> Box<dyn IntoResponse> {
+    /// fn my_middleware(_: Context, req: Request, next: Box<dyn Fn(Request) -> Response>) -> Box<dyn IntoResponse> {
     ///     println!("you accessed my route!");
     ///
-    ///     Box::new(next())
+    ///     Box::new(next(req))
     /// };
     ///
     /// let router = Router::builder("localhost")
     ///     .middleware(&[my_middleware], |router| {
-    ///         router.get("/", |_| "hello world!")
+    ///         router.get("/", |_, _| "hello world!")
     ///     })
     ///     .build()
     ///     .unwrap();

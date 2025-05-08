@@ -33,14 +33,6 @@ type ChainOperator = Rc<Box<dyn Fn(Request) -> Box<dyn IntoResponse>>>;
 
 impl Server {
     /// Binds the server to the provided address.
-    ///
-    /// ```
-    /// use snx::{Server, router::Router};
-    ///
-    /// let router = Router::builder("localhost").build().unwrap();
-    /// let global_middleware = vec![];
-    /// let server = Server::try_bind("127.0.0.1:2002", router, global_middleware).expect("failed to bind listener");
-    /// ```
     pub fn try_bind(
         addr: impl net::ToSocketAddrs,
         router: Router,
@@ -59,15 +51,6 @@ impl Server {
     }
 
     /// Starts serving incoming HTTP requests.
-    ///
-    /// ```no_run
-    /// use snx::{Server, router::Router};
-    ///
-    /// let router = Router::builder("localhost").build().unwrap();
-    /// Server::try_bind("127.0.0.1:2002", router, vec![])
-    ///     .expect("failed to bind to listener")
-    ///     .serve();
-    /// ```
     pub fn serve(self) {
         let num_threads = self.num_threads.unwrap_or(
             std::thread::available_parallelism()
@@ -89,15 +72,6 @@ impl Server {
     }
 
     /// Sets the number of threads to be used in the threadpool.
-    ///
-    /// ```
-    /// use snx::{Server, router::Router};
-    ///
-    /// let router = Router::builder("localhost").build().unwrap();
-    /// let server = Server::try_bind("127.0.0.1:2002", router, vec![])
-    ///     .expect("failed to bind to listener")
-    ///     .num_threads(4);
-    /// ```
     pub fn num_threads(mut self, amount: usize) -> Self {
         self.num_threads = Some(amount);
 

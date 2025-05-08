@@ -57,24 +57,26 @@ pub fn initialize_session(
     next: Box<dyn Fn(Request) -> Response>,
 ) -> Box<dyn IntoResponse> {
     if let Some(session_store) = ctx.session_store {
-        if let Some(cookie) = req.cookies().get(
-            &ctx.config
-                .session
-                .clone()
-                .unwrap_or_default()
-                .cookie_key
-                .unwrap_or("snx-session".to_string()),
-        ) {
-            if let Ok(id) = cookie.value().parse::<u128>() {
-                let mut guard = session_store.try_lock().unwrap();
-                if let Ok(Some(session)) = guard.load(id) {
-                    if session.expires_at > Zoned::now() {
-                        drop(guard);
-                        req.session = Some(session);
-                        return Box::new(next(req));
-                    }
+        if let Some(cookies) = req.cookies().unwrap() {
+            if let Some(cookie) = cookies.get(
+                &ctx.config
+                    .session
+                    .clone()
+                    .unwrap_or_default()
+                    .cookie_key
+                    .unwrap_or("snx-session".to_string()),
+            ) {
+                if let Ok(id) = cookie.value().parse::<u128>() {
+                    let mut guard = session_store.try_lock().unwrap();
+                    if let Ok(Some(session)) = guard.load(id) {
+                        if session.expires_at > Zoned::now() {
+                            drop(guard);
+                            req.session = Some(session);
+                            return Box::new(next(req));
+                        }
 
-                    guard.delete(session.id).unwrap();
+                        guard.delete(session.id).unwrap();
+                    }
                 }
             }
         }

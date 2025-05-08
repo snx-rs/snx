@@ -1,5 +1,8 @@
 use std::{collections::HashMap, net::SocketAddr, str};
 
+#[cfg(feature = "cookies")]
+use biscotti::{errors::ParseError, Processor, ProcessorConfig, RequestCookies};
+
 use super::{header::HeaderMap, Method};
 
 /// The maximum amount of headers that will be parsed.
@@ -76,18 +79,17 @@ impl Request {
     /// ```
     /// use snx::request::Request;
     ///
-    /// let request = Request.builder().header("Cookie", "name=value").build();
+    /// let request = Request::builder().header("Cookie", "name=value").build();
     /// let cookies = request.cookies();
     /// ```
     #[cfg(feature = "cookies")]
-    pub fn cookies(&self) -> biscotti::RequestCookies {
-        self.headers
-            .get_ref("cookie")
-            .map(|value| {
-                let processor: biscotti::Processor = biscotti::ProcessorConfig::default().into();
-                biscotti::RequestCookies::parse_header(value, &processor).unwrap()
-            })
-            .unwrap_or(biscotti::RequestCookies::new())
+    pub fn cookies(&self) -> Result<Option<RequestCookies>, ParseError> {
+        if let Some(value) = self.headers.get_ref("cookie") {
+            let processor: Processor = ProcessorConfig::default().into();
+            return Ok(Some(RequestCookies::parse_header(value, &processor)?));
+        }
+
+        Ok(None)
     }
 
     /// Gets the peer address for this request.
@@ -188,7 +190,9 @@ impl Request {
                 }
 
                 if let Some(length) = request.headers.get("content-length") {
-                    let length = length.parse::<usize>().unwrap();
+                    let length = length
+                        .parse::<usize>()
+                        .map_err(|_| ParseRequestError::ContentLengthInvalid)?;
                     let range = &buffer[start_of_body..(start_of_body + length)];
 
                     request = request.body(range.to_vec());
@@ -216,6 +220,8 @@ pub enum ParseRequestError {
     Partial,
     #[error(transparent)]
     General(#[from] httparse::Error),
+    #[error("value of content length header is an invalid unsigned integer")]
+    ContentLengthInvalid,
 }
 
 /// An HTTP request builder.

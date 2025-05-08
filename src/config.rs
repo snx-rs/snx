@@ -1,4 +1,4 @@
-use std::{fs::File, io::Read, str::FromStr, time::Duration, num::ParseIntError};
+use std::{fs::File, io::Read, num::ParseIntError, str::FromStr, time::Duration};
 
 use serde::Deserialize;
 
@@ -96,6 +96,6 @@ pub fn parse_duration(value: &str) -> Result<Duration, ParseDurationError> {
     match unit {
         "m" => Ok(Duration::from_secs(value * 60)),
         "d" => Ok(Duration::from_secs(value * 24 * 60 * 60)),
-        _ => Err(ParseDurationError::InvalidFormat)
+        _ => Err(ParseDurationError::InvalidFormat),
     }
 }
