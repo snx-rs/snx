@@ -192,7 +192,7 @@ impl Server {
                     request.clone(),
                     Box::new({
                         let value = op.clone();
-                        move || value(request.clone()).into_response()
+                        move |req| value(req).into_response()
                     }),
                 )
             })));

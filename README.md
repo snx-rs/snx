@@ -4,6 +4,13 @@ snx is an experimental, opiniated and batteries-included web framework that allo
 
 ## overview of features
 
+- non-async
+- flexible routing
+- handlers and middleware
+- templating
+- cookies and sessions
+- pure safe Rust (`#![forbid(unsafe_code)]`)
+
 ###### non-async
 
 snx does not use async Rust at all and achieves asynchronous execution using

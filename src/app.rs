@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use crate::{
     config::Config,
@@ -28,7 +28,11 @@ pub trait App {
     ///
     /// Configures the request tracing middleware by default.
     fn with_global_middleware() -> Vec<MiddlewareHandler> {
-        vec![Arc::new(Box::new(trace_requests))]
+        vec![
+            Arc::new(Box::new(trace_requests)),
+            #[cfg(feature = "sessions")]
+            Arc::new(Box::new(crate::middleware::initialize_session)),
+        ]
     }
 
     /// Defines the application's logging/tracing configuration.
@@ -37,16 +41,27 @@ pub trait App {
     fn with_tracing() {
         tracing_subscriber::fmt().with_target(false).init();
     }
+
+    /// Defines the application's session store.
+    #[cfg(feature = "sessions")]
+    fn with_sessions(_: Context) -> Option<Box<dyn crate::session::SessionStore + Send + Sync>> {
+        Some(Box::new(crate::session::MemorySessionStore::default()))
+    }
 }
 
 /// Boots the snx framework and starts your application.
 pub fn boot<A: App>() {
     let config = A::with_config();
-    let ctx = Context::new(config.clone());
+
+    let mut ctx = Context::new(config.clone());
+
+    #[cfg(feature = "sessions")]
+    {
+        ctx.session_store = A::with_sessions(ctx.clone()).map(|v| Arc::new(Mutex::new(v)));
+    }
 
     let builder = Router::builder(&config.server.base_url);
     let router = A::with_routes(builder);
-
     let global_middleware = A::with_global_middleware();
 
     A::with_tracing();

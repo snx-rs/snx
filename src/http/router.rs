@@ -278,7 +278,11 @@ impl Builder {
     /// ```
     pub fn middleware(
         mut self,
-        middleware: &'static [impl Fn(Context, Request, Box<dyn Fn() -> Response>) -> Box<dyn IntoResponse>
+        middleware: &'static [impl Fn(
+            Context,
+            Request,
+            Box<dyn Fn(Request) -> Response>,
+        ) -> Box<dyn IntoResponse>
                       + Send
                       + Sync],
         body: impl Fn(Builder) -> Builder,
@@ -291,7 +295,11 @@ impl Builder {
         for handler in middleware {
             builder.middleware.push(Arc::new(Box::new(handler)
                 as Box<
-                    dyn Fn(Context, Request, Box<dyn Fn() -> Response>) -> Box<dyn IntoResponse>
+                    dyn Fn(
+                            Context,
+                            Request,
+                            Box<dyn Fn(Request) -> Response>,
+                        ) -> Box<dyn IntoResponse>
                         + Send
                         + Sync,
                 >));

@@ -1,14 +1,12 @@
 use std::{collections::HashMap, net::SocketAddr, str};
 
-
-
 use super::{header::HeaderMap, Method};
 
-/// The maxmimum amount of headers that will be parsed.
+/// The maximum amount of headers that will be parsed.
 const HEADERS_COUNT: usize = 32;
 
 /// Represents an HTTP request.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Request {
     method: Method,
     path: String,
@@ -16,6 +14,8 @@ pub struct Request {
     headers: HeaderMap,
     peer_addr: Option<SocketAddr>,
     pub params: HashMap<String, String>,
+    #[cfg(feature = "sessions")]
+    pub session: Option<crate::session::Session>,
 }
 
 impl Request {
@@ -80,11 +80,14 @@ impl Request {
     /// let cookies = request.cookies();
     /// ```
     #[cfg(feature = "cookies")]
-    pub fn cookies(&self) -> Option<biscotti::RequestCookies> {
-        self.headers.get_ref("cookie").map(|value| {
-            let processor: biscotti::Processor = biscotti::ProcessorConfig::default().into();
-            biscotti::RequestCookies::parse_header(value, &processor).unwrap()
-        })
+    pub fn cookies(&self) -> biscotti::RequestCookies {
+        self.headers
+            .get_ref("cookie")
+            .map(|value| {
+                let processor: biscotti::Processor = biscotti::ProcessorConfig::default().into();
+                biscotti::RequestCookies::parse_header(value, &processor).unwrap()
+            })
+            .unwrap_or(biscotti::RequestCookies::new())
     }
 
     /// Gets the peer address for this request.
@@ -146,7 +149,9 @@ impl Request {
 
     /// Tries to deserialize the JSON body into the specified struct.
     #[cfg(feature = "json")]
-    pub fn json<T: serde::de::DeserializeOwned>(&self) -> Result<T, crate::json::InvalidJsonBodyError> {
+    pub fn json<T: serde::de::DeserializeOwned>(
+        &self,
+    ) -> Result<T, crate::json::InvalidJsonBodyError> {
         serde_json::from_slice::<T>(&self.body).map_err(|e| e.into())
     }
 
@@ -320,6 +325,8 @@ impl Builder {
             body: self.body.clone(),
             headers: self.headers.clone(),
             params: Default::default(),
+            #[cfg(feature = "sessions")]
+            session: None,
         }
     }
 }

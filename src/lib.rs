@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 mod app;
 mod config;
 mod context;
@@ -6,6 +8,9 @@ mod html;
 mod http;
 mod panic_hook;
 mod server;
+
+#[cfg(feature = "sessions")]
+mod session;
 
 #[cfg(feature = "json")]
 mod json;

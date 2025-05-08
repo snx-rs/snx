@@ -1,4 +1,4 @@
-use std::{fs::File, io::Read};
+use std::{fs::File, io::Read, str::FromStr, time::Duration, num::ParseIntError};
 
 use serde::Deserialize;
 
@@ -7,6 +7,8 @@ pub struct Config {
     pub server: ServerConfig,
     #[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
     pub database: DatabaseConfig,
+    #[cfg(feature = "sessions")]
+    pub session: Option<SessionConfig>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -43,6 +45,18 @@ pub struct DatabaseConfig {
     pub connection_timeout: Option<u64>,
 }
 
+#[derive(Deserialize, Debug, Clone, Default)]
+pub struct SessionConfig {
+    /// Cookie key used for storing the session.
+    ///
+    /// Defaults to 'snx-session'.
+    pub cookie_key: Option<String>,
+    /// Duration after which the session will expire.
+    ///
+    /// Defaults to 7 days.
+    pub expires_after: Option<String>,
+}
+
 impl Config {
     /// Tries to read and parse the config from the filesystem.
     ///
@@ -56,5 +70,32 @@ impl Config {
         File::open("./snx.toml")?.read_to_string(&mut contents)?;
 
         Ok(toml::from_str::<Config>(&contents)?)
+    }
+}
+
+/// Represents an error that occurred during duration parsing.
+#[derive(thiserror::Error, Debug)]
+pub enum ParseDurationError {
+    #[error("invalid format")]
+    InvalidFormat,
+    #[error(transparent)]
+    InvalidNumber(#[from] ParseIntError),
+}
+
+/// Parses a duration string into a Duration struct.
+///
+/// Examples: "30m" for 30 minutes and "7d" for 7 days.
+pub fn parse_duration(value: &str) -> Result<Duration, ParseDurationError> {
+    if value.len() < 2 {
+        return Err(ParseDurationError::InvalidFormat);
+    }
+
+    let (value, unit) = value.split_at(value.len() - 1);
+    let value = u64::from_str(value)?;
+
+    match unit {
+        "m" => Ok(Duration::from_secs(value * 60)),
+        "d" => Ok(Duration::from_secs(value * 24 * 60 * 60)),
+        _ => Err(ParseDurationError::InvalidFormat)
     }
 }

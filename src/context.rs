@@ -1,4 +1,7 @@
-use std::time::Duration;
+use std::{
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
 use crate::Config;
 
@@ -7,6 +10,8 @@ pub struct Context {
     pub config: Config,
     #[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
     pub db: diesel::r2d2::Pool<diesel::r2d2::ConnectionManager<crate::db::DatabaseConnection>>,
+    #[cfg(feature = "sessions")]
+    pub session_store: Option<Arc<Mutex<Box<dyn crate::session::SessionStore + Send + Sync>>>>,
 }
 
 impl Context {
@@ -35,6 +40,8 @@ impl Context {
 
                 pool.build(manager).unwrap()
             },
+            #[cfg(feature = "sessions")]
+            session_store: None,
         }
     }
 }

@@ -30,8 +30,8 @@
 ## 0.0.6 session and cookies
 
 - [ ] pass data from middleware to middleware/handler
-- [ ] session storage
-- [ ] cookies
+- [x] session storage
+- [x] cookies
 
 ## 0.0.7 templating, forms and validation
 
@@ -56,3 +56,4 @@
 - authentication
 - cors
 - flash messages
+- jwt
