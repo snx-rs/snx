@@ -1,0 +1,15 @@
+[package]
+name = "snx-cli"
+version = "0.0.5"
+edition = "2024"
+
+[[bin]]
+name = "snx"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0.102"
+clap = { version = "4.5.60", features = ["derive"] }
+nanocolor = "0.1.1"
+nanospinner = "0.3.2"
+pluralizer = "0.5.0"

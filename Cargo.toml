@@ -1,0 +1,22 @@
+[package]
+name = "snx"
+version = "0.0.5"
+edition = "2024"
+description = "an experimental batteries-included web framework"
+authors = ["Julian Ollivieira"]
+documentation = "https://docs.rs/snx"
+repository = "https://github.com/snx-rs/snx"
+license = "MIT"
+
+[lib]
+bench = false
+path = "crates/core/lib.rs"
+name = "snx"
+
+[workspace]
+resolver = "3"
+members = [
+	"crates/cli"
+]
+
+[dependencies]
