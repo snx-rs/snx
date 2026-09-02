@@ -1,5 +1,6 @@
 use std::{io, marker::PhantomData, num};
 
+use futures::{AsyncReadExt, TryStreamExt};
 use http::into_response::Body;
 use http_ext::header::ToStrError;
 
@@ -30,44 +31,29 @@ where
         self.inner.uri()
     }
 
-    /// Reads the incoming HTTP body, deserializes it into the given type and validates it
+    /// Reads the entire incoming HTTP body, deserializes it into the given payload type and
+    /// validates it
+    ///
+    /// ```rust
+    /// #[derive(Deserialize, Validate)]
+    /// pub struct Payload {
+    ///     #[rule(ascii)]
+    ///     email: String,
+    /// }
+    ///
+    /// pub async fn send_password_reset_email(req: Request<Payload>) {
+    ///     let Payload { email } = req.payload().await?;
+    ///
+    ///     // ...
+    /// }
+    /// ```
     pub async fn payload(&mut self) -> Result<F::Value, PayloadError<F::Error>> {
-        let body = self.read_body_to_end().await.unwrap();
-        println!("bytes: {:?}", body);
-        println!("utf8: {:?}", str::from_utf8(&body).unwrap());
+        let body = self.read_body_to_end().await.map_err(PayloadError::Body)?;
         let value = F::from_bytes(&body).map_err(PayloadError::Deserialize)?;
         value.validate().map_err(PayloadError::Validation)
-
-        // let mut bytes = Vec::new();
-        // let length = self.inner.headers().get("Content-Length").unwrap().clone();
-        // loop {
-        //     println!("PART utf8: {:?}", str::from_utf8(&bytes).unwrap());
-        //     match self.inner.body_mut().try_next().await.unwrap() {
-        //         Some(b) => {
-        //             bytes.extend_from_slice(&b);
-        //             if b.len() >= length.to_str().unwrap().parse::<usize>().unwrap() {
-        //                 break;
-        //             }
-        //         }
-        //         None => break,
-        //     }
-        // }
-        // println!("bytes: {:?}", bytes);
-        // println!("utf8: {:?}", str::from_utf8(&bytes).unwrap());
-        // read until end
-        // while let Some(b) = self
-        //     .inner
-        //     .body_mut()
-        //     .try_next()
-        //     .await
-        //     .map_err(PayloadError::Read)?
-        // {
-        //     println!("a");
-        //     bytes.extend_from_slice(&b);
-        // }
-        // println!("b");
     }
 
+    /// Reads this request's entire body
     async fn read_body_to_end(&mut self) -> Result<Vec<u8>, ReadBodyError> {
         let length = self
             .inner
@@ -77,16 +63,14 @@ where
             .to_str()?
             .parse::<usize>()?;
 
-        todo!();
+        let mut buf = vec![0u8; length];
+        self.inner
+            .body_mut()
+            .into_async_read()
+            .read_exact(&mut buf)
+            .await?;
 
-        // let mut buf = Vec::with_capacity(length);
-        // self.inner
-        //     .body_mut()
-        //     .into_async_read()
-        //     .read_exact(&mut buf)
-        //     .await?;
-
-        // Ok(buf)
+        Ok(buf)
     }
 }
 
@@ -113,7 +97,7 @@ impl Request<()> {
 
 #[derive(Debug)]
 pub enum PayloadError<E> {
-    Request,
+    Body(ReadBodyError),
     Read(io::Error),
     Deserialize(E),
     Validation(validation::Error),
