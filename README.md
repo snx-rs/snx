@@ -1,139 +1,51 @@
 # snx
 
-snx is an experimental, opiniated and batteries-included web framework that allows you to quickly develop robust web applications using Rust.
+snx is an experimental, opiniated and batteries-included web framework that
+tries to be a breath of fresh air by making different choices than other popular
+web frameworks and (hopefully) by making these choices, can give you a better
+experience developing and maintaining efficient and robust web applications.
 
-## overview of features
+check out the documentation at [`./docs/1-introduction.md`](./docs/1-introduction.md) to get started.
 
-- non-async
-- flexible routing
-- handlers and middleware
-- templating
-- cookies and sessions
-- pure safe Rust (`#![forbid(unsafe_code)]`)
+## llms and generative ai
 
-###### non-async
+all code and documentation is written, reasoned and thought about by a real human
+being.
 
-snx does not use async Rust at all and achieves asynchronous execution using
-threading. snx not using async has numerious benefits like: not being locked
-into an async runtime's ecosystem such as `tokio`, not requiring an async
-runtime at all and not having to manage the added complexity of async as a whole
-allowing you to focus on your application and domain logic rather than fighting
-over lifetimes.
+## core values and goals
 
-this does come with a couple of trade-offs, namely ... TBA
+###### code is an art
 
-###### flexible routing
+reading code while working on web applications using snx should be clear and
+simple. a new snx project should feel like an empty canvas and writing code
+should feel like painting and should be joyful.
 
-snx provides a fast, ergonomic and macro-free routing system based on `matchit`
-that supports dynamic route segments, wildcards, prefixes, middleware and
-hostname-based routing.
+###### embrace your stack
 
-```rust
-Router::builder()
-    .get("/", show_index)
-    .get("/contact", show_contact)
-    .post("/contact", submit_contact)
-    .host("{tenant}.acme.com", |builder| {
-        builder
-            .get("/", show_tenant_index)
-            .get("/media/{*path}", retrieve_tenant_media)
-    })
-    .middleware(&[auth], |builder| {
-        builder
-            .prefix("/dashboard/tenants", |builder| {
-                builder
-                    .post("/", store_tenant)
-                    .get("/", show_tenants)
-                    .get("/{id}", show_tenant)
-                    .post("/{id}", update_tenant)
-                    .delete("/{id}", delete_tenant)
-            })
-    })
-    .build()
-    .unwrap()
-```
+your choice of database, cache, blob storage etc. are not abstracted away and
+are part of your application. snx goes deep on what you choose and gives handles
+for it, think [Postgres RLS](https://www.postgresql.org/docs/current/ddl-rowsecurity.html), [Redis Streams](https://redis.io/docs/latest/develop/data-types/streams/) and [S3 Presigning](https://docs.aws.amazon.com/AmazonS3/latest/userguide/ShareObjectPreSignedURL.html).
 
-###### handlers and middleware
+###### if it compiles, it works
 
-handlers in snx are functions or closures which take 2 arguments (a context and
-a request) and produce anything that can be turned into a response. the first
-argument can be used to interact with parts of your applications, for example,
-executing database queries, sending emails or rendering templates. the second
-argument contains all the request information and allows you to read incoming
-data from the request and act on it accordingly.
+no orm, just the best slice of one. you get the good parts (free crud, generated
+types, zero boilerplate) derived from your schema, and none of the rest: no
+query DSL, no lazy loading, no hidden queries. everything beyond crud is plain
+sql. models and queries are type-checked against your schema at compile-time.
 
-```rust
-#[derive(Deserialize, Insertable)]
-#[diesel(table_name = crate::schema::tenants)]
-struct StoreTenantPayload {
-    name: String,
-}
+###### strict at every boundary
 
-fn store_tenant(ctx: Context, req: Request) -> Result<(StatusCode, Json<Tenant>)> {
-    let payload = req.json::<StoreTenantPayload>()?;
-    let tenant = payload
-        .insert_into(tenants)
-        .get_result::<Tenant>(&mut ctx.db.get().unwrap())?;
+snx inverts Postel's law. unknown/malformed input is an error, also every
+possible response must be defined beforehand, both successful ones and errors.
 
-    Ok((StatusCode::Created, Json(tenant)))
-}
-```
+## history and roadmap
 
-middleware in snx are almost exactly like handlers but they take 3 arguments (a
-context, a request and a next function). the third argument is used to call the
-next middleware/handler in the chain. middleware are layered like an onion, just
-like axum.
-
-###### templating
-
-you can define templates using the `template` macro. this macro will be
-transpiled to a `format` macro call at build-time, which will result in a
-string at run-time. "components" are just functions/closures which return a
-string.
-
-- use braced blocks to write arbitrary Rust code
-- braces can be omitted for attribute values
-- quoted and unquoted text nodes
-- fragments
-
-```rust
-fn article(article: Article) -> String {
-    template! {
-        <a href=format!("articles/{}", article.slug)>
-            <article>
-                <img
-                    src=article.cover.url
-                    alt=article.cover.alt
-                    width="400"
-                    height="200"
-                />
-                <h2>{article.title}</h2>
-                <small>author: {article.author}</small>
-            </article>
-        </a>
-    } 
-}
-
-fn index(ctx: Context, _: Request) -> Result<Html> {
-    let articles = articles
-        .select(Article::as_select())
-        .load(&mut ctx.db.get().unwrap())?;
-
-    Ok(Html(layout(template! {
-        <section>
-            <h1>articles</h1>
-            <ul>
-                {articles.into_iter().map(article).collect::<Vec<String>>().join("")} 
-            </ul>
-        </section>
-    })))
-}
-```
-
-## non-features
-
-###### HTTP/2, HTTP/3 and TLS/SSL
-
-snx is designed to sit behind a reverse proxy and only supports HTTP/1.1 without
-TLS/SSL. configure a reverse proxy (e.g. nginx or Caddy) for HTTP/2, HTTP/3 and
-TLS/SSL.
+| version | description                                                               | status |
+| ------- | ------------------------------------------------------------------------- | ------ |
+| 0.1.0   | everything required to create a good JSON api                             |        |
+| 0.0.x   | ...                                                                       |        |
+| 0.0.6   | full rewrite                                                              | busy   |
+| 0.0.5   | json io and experimenting with database interaction                       | done   |
+| 0.0.4   | improved http handling and routing                                        | done   |
+| 0.0.3   | middleware, basic tracing and improved routing                            | done   |
+| 0.0.2   | first implementation of simple router and handlers                        | done   |

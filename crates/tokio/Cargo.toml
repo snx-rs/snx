@@ -1,0 +1,17 @@
+[package]
+name = "tokio"
+version = "0.0.5"
+edition = "2024"
+
+[dependencies]
+tracing = { workspace = true }
+bytes = { workspace = true }
+thiserror = { workspace = true }
+futures = { workspace = true }
+http_ext = { workspace = true }
+
+http = { path = "../http" }
+app = { path = "../app" }
+
+tokio_ext = { package = "tokio", version = "1.50.0", features = ["rt-multi-thread", "net"] }
+tokio-util = { version = "0.7.17", default-features = false, features = ["io", "codec", "compat"] }

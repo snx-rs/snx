@@ -1,62 +1,40 @@
 [package]
 name = "snx"
 version = "0.0.5"
-edition = "2021"
-description = "an experimental batteries-included web framework for Rust"
+edition = "2024"
+description = "an experimental batteries-included web framework"
 authors = ["Julian Ollivieira"]
 documentation = "https://docs.rs/snx"
 repository = "https://github.com/snx-rs/snx"
 license = "MIT"
 
+[lib]
+bench = false
+path = "crates/snx/lib.rs"
+name = "snx"
+
+[workspace]
+resolver = "3"
+members = [
+	"crates/app",
+	"crates/macros",
+	"crates/tokio",
+	"crates/http",
+]
+
+[workspace.dependencies]
+tracing = "0.1.44"
+bytes = "1.12.1"
+thiserror = "2.0.20"
+jiff = "0.2.35"
+futures = { version = "0.3.33", default-features = false, features = ["alloc", "std"] }
+http_ext = { package = "http", version = "1.5.0" }
+
 [features]
-default = ["cookies", "json", "templating", "sessions"]
-sqlite = [
-	"dep:diesel",
-	"dep:jiff-diesel",
-	"diesel/sqlite",
-	"diesel/returning_clauses_for_sqlite_3_35",
-	"jiff-diesel/sqlite",
-]
-postgres = [
-	"dep:diesel",
-	"dep:jiff-diesel",
-	"diesel/postgres",
-	"jiff-diesel/postgres",
-]
-mysql = ["dep:diesel", "dep:jiff-diesel", "diesel/mysql", "jiff-diesel/mysql"]
-cookies = ["dep:biscotti"]
-json = ["dep:serde_json"]
-templating = ["dep:sjabloon"]
-sessions = ["cookies", "dep:rand"]
+tokio = []
 
 [dependencies]
-# threading
-rayon = "1.10.0"
-
-# http and routing
-httparse = "1.9.5"
-matchit = "0.8.6"
-regex = "1.11.1"
-biscotti = { version = "0.4.0", optional = true }
-
-# error handling
-thiserror = "2.0.11"
-anyhow = "1.0.95"
-
-# configuration and logging
-toml = "0.8.19"
-tracing = "0.1.41"
-tracing-subscriber = "0.3.19"
-
-# database
-diesel = { version = "2.2.0", features = ["r2d2"], optional = true }
-jiff-diesel = { version = "0.1.0", optional = true }
-
-# templating
-sjabloon = { version = "0.0.2", optional = true }
-
-# other
-jiff = "0.2.0"
-serde = { version = "1.0.217", features = ["derive"] }
-serde_json = { version = "1.0.138", optional = true }
-rand = { version = "0.9.1", features = ["std", "alloc"], default-features = false, optional = true }
+app = { path = "crates/app" }
+tokio = { path = "crates/tokio" }
+http = { path = "crates/http" }
+macros = { path = "crates/macros" }
