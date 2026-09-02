@@ -1,0 +1,20 @@
+[package]
+name = "app"
+version = "0.0.5"
+edition = "2024"
+
+[dependencies]
+bytes = { workspace = true }
+thiserror = { workspace = true }
+futures = { workspace = true }
+http_ext = { workspace = true }
+tracing = { workspace = true }
+
+http = { path = "../http" }
+macros = { path = "../macros" }
+
+futures-timer = "3.0.3"
+regex = "1.13.1"
+matchit = "0.9.2"
+serde_json = "1.0.151"
+serde = "1.0.229"

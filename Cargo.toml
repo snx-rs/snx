@@ -10,13 +10,31 @@ license = "MIT"
 
 [lib]
 bench = false
-path = "crates/core/lib.rs"
+path = "crates/snx/lib.rs"
 name = "snx"
 
 [workspace]
 resolver = "3"
 members = [
-	"crates/cli"
+	"crates/app",
+	"crates/macros",
+	"crates/tokio",
+	"crates/http",
 ]
 
+[workspace.dependencies]
+tracing = "0.1.44"
+bytes = "1.12.1"
+thiserror = "2.0.20"
+jiff = "0.2.35"
+futures = { version = "0.3.33", default-features = false, features = ["alloc", "std"] }
+http_ext = { package = "http", version = "1.5.0" }
+
+[features]
+tokio = []
+
 [dependencies]
+app = { path = "crates/app" }
+tokio = { path = "crates/tokio" }
+http = { path = "crates/http" }
+macros = { path = "crates/macros" }
